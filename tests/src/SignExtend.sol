@@ -2,7 +2,7 @@
 pragma solidity >=0.8.0 <0.9.0;
 
 contract SignExtend {
-    function changeMySign(int16 x) public pure returns (int16) {
+    function changeMySign(int16 x) public pure returns (uint16) {
         return -x;
     }
 }

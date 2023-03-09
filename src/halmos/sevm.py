@@ -34,7 +34,7 @@ f_gaslimit     = Function('gaslimit'    , BitVecSort(256))
 f_chainid      = Function('chainid'     , BitVecSort(256))
 f_orig_balance = Function('orig_balance', BitVecSort(256), BitVecSort(256)) # target address
 
-# uninterpreted arithmetic
+# uninterpreted arithmetic # @audit why uninterpreted arithmetic? why not just implement what we know it does?
 f_add  = Function('evm_add' , BitVecSort(256), BitVecSort(256), BitVecSort(256))
 f_sub  = Function('evm_sub' , BitVecSort(256), BitVecSort(256), BitVecSort(256))
 f_mul  = Function('evm_mul' , BitVecSort(256), BitVecSort(256), BitVecSort(256))
@@ -53,12 +53,14 @@ def wextend(mem: List[Byte], loc: int, size: int) -> None:
 
 def wload(mem: List[Byte], loc: int, size: int) -> Bytes:
     wextend(mem, loc, size)
+    # @audit what does simplify do when a BitVec is passed in instead of an expression?
     return simplify(Concat(mem[loc:loc+size])) # BitVecSort(size * 8)
 
 def wstore(mem: List[Byte], loc: int, size: int, val: Bytes) -> None:
     if not eq(val.sort(), BitVecSort(size*8)): raise ValueError(val)
     wextend(mem, loc, size)
     for i in range(size):
+        # @audit wouldn't this store them backwards? and why simplify?
         mem[loc + i] = simplify(Extract((size-1 - i)*8+7, (size-1 - i)*8, val))
 
 def wstore_partial(mem: List[Byte], loc: int, offset: int, size: int, data: Bytes, datasize: int) -> None:

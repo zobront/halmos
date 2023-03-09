@@ -1082,6 +1082,7 @@ class SEVM:
                     else:
                         codesize = f_extcodesize(address)
                         if address == con(hevm_cheat_code.address):
+                            # @audit that seems sloppy?
                             ex.solver.add(codesize > 0)
                     ex.st.push(codesize)
                 elif o.op[0] == 'EXTCODEHASH':

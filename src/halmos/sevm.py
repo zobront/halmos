@@ -118,7 +118,7 @@ class State:
         return v
 
     def dup(self, n: int) -> None:
-        self.push(self.stack[n-1])
+        self.push(self.stack[n-1]) # @audit why -1? when we use it do we align with EVM op codes that dup1 is first slot?
 
     def swap(self, n: int) -> None:
         tmp = self.stack[0]
@@ -126,7 +126,7 @@ class State:
         self.stack[n] = tmp
 
     def mloc(self) -> int:
-        loc: int = int(str(self.pop())) # loc must be concrete
+        loc: int = int(str(self.pop())) # loc must be concrete # @audit how does this work?
         return loc
 
     def mstore(self, full: bool) -> None:
@@ -153,7 +153,7 @@ class State:
 
 class Exec: # an execution path
     # network
-    pgm: Dict[Any,List[Opcode]] # address -> { opcode map: pc -> opcode }
+    pgm: Dict[Any,List[Opcode]] # address -> { opcode map: pc -> opcode } # @audit how is it different from code below? is just stored differently?
     code: Dict[Any,List[str]] # address -> opcode sequence
     storage: Dict[Any,Dict[int,Any]] # address -> { storage slot -> value }
     balance: Dict[Any,Any] # address -> balance
@@ -165,7 +165,7 @@ class Exec: # an execution path
     # vm state
     pc: int
     st: State # stack and memory
-    jumpis: Dict[str,Dict[bool,int]] # for loop detection
+    jumpis: Dict[str,Dict[bool,int]] # for loop detection # @audit how is this used?
     output: Any # returndata
     symbolic: bool # symbolic or concrete storage
     # path
@@ -441,6 +441,7 @@ def and_or(x: Word, y: Word, is_and: bool) -> Word:
     #elif x.sort().name() == 'bv' and y.sort().name() == 'bv':
     elif eq(x.sort(), BitVecSort(256)) and eq(y.sort(), BitVecSort(256)):
         if is_and:
+            # @audit isn't this bitwise and the above is logical and?
             return (x & y)
         else:
             return (x | y)
@@ -458,6 +459,7 @@ def or_of(x: Word, y: Word) -> Word:
     return and_or(x, y, False)
 
 def b2i(w: Word) -> Word:
+    # @audit aren't True and False capitalized in python? i think these are direct passing of True and False values?
     if w.decl().name() == 'true':
         return con(1)
     if w.decl().name() == 'false':
@@ -696,6 +698,7 @@ class SEVM:
                     new_ex.error = str('external call stuck: ' + opcode)
                     out.append(new_ex)
 
+        # @audit when would it be unknown?
         def call_unknown() -> None:
             # push exit code
             if arg_size > 0:
@@ -711,6 +714,7 @@ class SEVM:
 
             # TODO: cover other precompiled
             if to == con(1): # ecrecover exit code is always 1
+                # @audit don't you need to actually return the ecrecover result?
                 ex.solver.add(exit_code_var != con(0))
 
             # vm cheat code
@@ -776,6 +780,7 @@ class SEVM:
 
         # transfer value
         ex.solver.add(UGE(ex.balance_of(ex.this), value)) # assume balance is enough; otherwise ignore this path
+        # @audit how does ignoring paths work? it still shows as "success" right? wouldn't that be a problem in this case?
         ex.balance[ex.this] = self.arith('SUB', ex.balance_of(ex.this), value)
         ex.balance[new_addr] = self.arith('ADD', ex.balance_of(new_addr), value)
 
